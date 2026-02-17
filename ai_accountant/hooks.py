@@ -26,9 +26,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/ai_accountant/css/ai_accountant.css"
-# app_include_js = "/assets/ai_accountant/js/ai_accountant.js"
 
 # include js, css files in header of web template
+
 # web_include_css = "/assets/ai_accountant/css/ai_accountant.css"
 # web_include_js = "/assets/ai_accountant/js/ai_accountant.js"
 
@@ -43,7 +43,15 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+#app_include_js = [
+#    "/assets/ai_accountant/js/purchase_invoice.js"
+#]
+
+doctype_js = {
+    "Document Upload": "public/js/document_upload.js",
+    "Purchase Invoice": "public/js/purchase_invoice.js"
+}
+#doctype_js = {"doctype" : "public/js/document_upload.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -247,3 +255,13 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+# Add this to hooks.py
+fixtures = [
+    {
+        "dt": "Workspace Link",
+        "filters": [
+            ["parent", "=", "CRM"],
+            ["label", "=", "Test Menu"]
+        ]
+    }
+]

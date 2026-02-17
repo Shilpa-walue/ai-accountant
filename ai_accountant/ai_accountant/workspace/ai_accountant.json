@@ -1,0 +1,24 @@
+{
+ "name": "AI Accountant",
+ "title": "AI Accountant",
+ "icon": "icon-robot",
+ "parent_page": "",
+ "public": 1,
+ "is_hidden": 0,
+ "for_user": "",
+ "module": "AI Accountant",
+ "app": "ai_accountant",
+ "label": "AI Accountant",
+ "sequence_id": 1,
+ "category": "Modules",
+ "charts": [],
+ "shortcuts": [
+  {
+   "label": "Test Dashboard",
+   "type": "DocType",
+   "link_to": "Lead",
+   "color": "#ff69b4"
+  }
+ ],
+ "cards": []
+}
