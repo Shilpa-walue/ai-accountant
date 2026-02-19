@@ -4,7 +4,9 @@ frappe.ui.form.on("Purchase Invoice", {
     refresh(frm) {
         if (frm.doc.docstatus === 0) {
 
-            frm.page.remove_inner_button("Smart Scan");
+            $(".page-actions .btn").filter(function(){
+            return $(this).text().trim().indexOf("Smart Scan") !== -1;
+            }).remove();
 
             var already_scanned = frm.doc.__ocr_done;
 
