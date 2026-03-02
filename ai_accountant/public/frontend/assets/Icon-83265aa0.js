@@ -1,0 +1,2 @@
+import{r as c,u as i,bC as m,b as o,c as l,t as u,P as a,I as t,g as r,a9 as y}from"./index-aca16d05.js";const g={__name:"Icon",props:{icon:{type:[String,Object],required:!0}},setup(e){return(n,k)=>{const s=c("FeatherIcon");return i(m)(e.icon)?(o(),l("div",a(t({key:0},n.$attrs)),u(e.icon),17)):typeof e.icon=="string"?(o(),r(s,t({key:1,name:e.icon},n.$attrs),null,16,["name"])):(o(),r(y(e.icon),a(t({key:2},n.$attrs)),null,16))}}};export{g as _};
+//# sourceMappingURL=Icon-83265aa0.js.map

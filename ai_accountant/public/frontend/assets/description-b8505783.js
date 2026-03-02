@@ -1,0 +1,2 @@
+import{m as r,G as s,x as u}from"./index-aca16d05.js";let a=Symbol("DescriptionContext");function v({slot:i=r({}),name:l="Description",props:n={}}={}){let e=r([]);function p(t){return e.value.push(t),()=>{let o=e.value.indexOf(t);o!==-1&&e.value.splice(o,1)}}return s(a,{register:p,slot:i,name:l,props:n}),u(()=>e.value.length>0?e.value.join(" "):void 0)}export{v as k};
+//# sourceMappingURL=description-b8505783.js.map
