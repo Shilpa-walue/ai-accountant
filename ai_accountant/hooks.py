@@ -95,6 +95,7 @@ doctype_list_js = {
 
 # before_install = "ai_accountant.install.before_install"
 # after_install = "ai_accountant.install.after_install"
+after_install = "ai_accountant.custom.fields.create_purchase_invoice_fields"
 
 # Uninstallation
 # ------------

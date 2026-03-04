@@ -352,35 +352,41 @@ function apply_and_save(frm, d){
 // ── Save draft ────────────────────────────────────────────────────────────────
 function save_draft(frm, d){
     frm.save("Save", function(){
-        hide_loading_screen();
-
-        // ── 1. Mark form as scanned so button stays disabled on refresh ──
+        // Store OCR data for post-reload badge injection
         frm.doc.__ocr_done = true;
+        frm.doc.__ocr_fields = d;
 
-        // ── 2. Disable Smart Scan button ────────────────────────────────
-        frm.page.btn_primary    // find our button by text
-        $(".page-actions .btn").filter(function(){
-            return $(this).text().trim().indexOf("Smart Scan") !== -1;
-        }).css({
-            "background-color": "#94a3b8",
-            "border-color":     "#94a3b8",
-            "opacity":          "0.6",
-            "cursor":           "not-allowed"
-        }).off("click").on("click", function(e){ e.stopPropagation(); });
+        // Reload doc from server so status properly shows "Draft" instead of "Not Saved"
+        frm.reload_doc().then(function(){
+            hide_loading_screen();
 
-        // Update badge: NEW → DONE
-        $(".page-actions .btn").filter(function(){
-            return $(this).text().trim().indexOf("Smart Scan") !== -1;
-        }).find("span:last-child").css("color","#64748b").text("DONE");
+            // Re-mark as scanned after reload
+            frm.doc.__ocr_done = true;
 
-        // ── 3. Add Auto-filled badges to field labels ────────────────────
-        inject_autofilled_badges(d);
+            // ── Disable Smart Scan button ────────────────────────────────
+            $(".page-actions .btn").filter(function(){
+                return $(this).text().trim().indexOf("Smart Scan") !== -1;
+            }).css({
+                "background-color": "#94a3b8",
+                "border-color":     "#94a3b8",
+                "opacity":          "0.6",
+                "cursor":           "not-allowed"
+            }).off("click").on("click", function(e){ e.stopPropagation(); });
 
-        // ── 4. Inject success banner at top of form ──────────────────────
-        inject_success_banner(frm);
+            // Update badge: NEW → DONE
+            $(".page-actions .btn").filter(function(){
+                return $(this).text().trim().indexOf("Smart Scan") !== -1;
+            }).find("span:last-child").css("color","#64748b").text("DONE");
 
-        // ── 5. Inject warning banner at bottom of form ───────────────────
-        inject_warning_banner(frm);
+            // ── Add Auto-filled badges to field labels ────────────────────
+            inject_autofilled_badges(d);
+
+            // ── Inject success banner at top of form ──────────────────────
+            inject_success_banner(frm);
+
+            // ── Inject warning banner at bottom of form ───────────────────
+            inject_warning_banner(frm);
+        });
     });
 }
 

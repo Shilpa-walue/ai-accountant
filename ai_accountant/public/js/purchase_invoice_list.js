@@ -501,6 +501,10 @@ function show_review_page(results, zip_name, listview){
 
         var total = selected.length;
 
+        // Generate batch ID upfront so all invoices share the same ID
+        var now = new Date();
+        var batch_id = 'BSS-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
+
         // Show creating overlay
         var $creating = $(`
             <div class="bsr-creating" id="bsr-creating">
@@ -535,7 +539,7 @@ function show_review_page(results, zip_name, listview){
 
                 setTimeout(function(){
                     $creating.remove();
-                    show_final_results($page, created_results, created_count, failed_count, total, listview);
+                    show_final_results($page, created_results, created_count, failed_count, total, listview, batch_id);
                 }, 1200);
                 return;
             }
@@ -549,7 +553,7 @@ function show_review_page(results, zip_name, listview){
 
             frappe.call({
                 method:'ai_accountant.api.batch_invoice_extractor.create_single_invoice',
-                args:{ocr_data: JSON.stringify(entry.data)},
+                args:{ocr_data: JSON.stringify(entry.data), upload_log_id: batch_id},
                 callback:function(r){
                     var elapsed = ((Date.now() - start_time)/1000).toFixed(1);
                     var res = r && r.message;
@@ -599,11 +603,7 @@ function add_activity($creating, ok, text, time){
     if(box) box.scrollTop = box.scrollHeight;
 }
 
-function show_final_results($page, results, created, failed, total, listview){
-    // Generate a batch ID
-    var now = new Date();
-    var batch_id = 'BSS-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
-
+function show_final_results($page, results, created, failed, total, listview, batch_id){
     // Collect created invoice names for filter
     var invoice_names = results.filter(function(r){return r.success;}).map(function(r){return r.invoice;});
     var skipped = total - created;
@@ -668,20 +668,34 @@ function show_final_results($page, results, created, failed, total, listview){
 
     // Copy batch ID
     $complete.find('#bsr-copy-id').on('click',function(){
-        navigator.clipboard.writeText(batch_id).then(function(){
-            frappe.show_alert({message:'Copied!',indicator:'green'});
-        });
+        var $btn = $(this);
+        // Reliable copy with fallback
+        var copied = false;
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = batch_id;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            copied = document.execCommand('copy');
+            document.body.removeChild(ta);
+        } catch(e){}
+        if(!copied && navigator.clipboard){
+            navigator.clipboard.writeText(batch_id).catch(function(){});
+            copied = true;
+        }
+        // Update button to Copied!
+        $btn.html(`
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Copied!
+        `).css({'color':'#16a34a','border-color':'#86efac','background':'#f0fdf4'});
     });
 
-    // View created invoices
+    // View created invoices — filter by upload_log_id
     $complete.find('#bsr-view-inv').on('click',function(){
         $complete.remove();
-        if(invoice_names.length){
-            var filter = JSON.stringify([["Purchase Invoice","name","in",invoice_names]]);
-            window.location.href = '/app/purchase-invoice?filters=' + encodeURIComponent(filter);
-        } else {
-            listview.refresh();
-        }
+        window.location.href = '/app/purchase-invoice?upload_log_id=' + encodeURIComponent(batch_id);
     });
 
     // Upload more

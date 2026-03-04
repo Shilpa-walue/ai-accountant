@@ -143,7 +143,7 @@ def _calc_confidence(ocr_result):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @frappe.whitelist()
-def create_single_invoice(ocr_data):
+def create_single_invoice(ocr_data, upload_log_id=None):
     """
     Create one Purchase Invoice from OCR data.
     Called sequentially from JS to show live progress.
@@ -159,7 +159,7 @@ def create_single_invoice(ocr_data):
         if not company:
             return {"success": False, "error": "No default company set"}
 
-        return _create_single_invoice(ocr_data, company)
+        return _create_single_invoice(ocr_data, company, upload_log_id=upload_log_id)
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback()[:500], "Single Invoice Create Error")
@@ -230,7 +230,7 @@ def create_invoices(invoices_json):
         return {"success": False, "error": str(e)[:300]}
 
 
-def _create_single_invoice(ocr_data, company):
+def _create_single_invoice(ocr_data, company, upload_log_id=None):
     """Create one Purchase Invoice from OCR data."""
     supplier = (ocr_data.get("supplier") or "").strip() or "Unknown Supplier"
 
@@ -289,6 +289,10 @@ def _create_single_invoice(ocr_data, company):
     pi.posting_date = ocr_data.get("posting_date") or frappe.utils.nowdate()
     pi.due_date = ocr_data.get("due_date") or None
     pi.set_posting_time = 1
+
+    # Set bulk upload log ID for filtering
+    if upload_log_id:
+        pi.upload_log_id = upload_log_id
 
     if items:
         for item in items:
