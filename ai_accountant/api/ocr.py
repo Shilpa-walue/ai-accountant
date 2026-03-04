@@ -11,7 +11,23 @@ from dateutil import parser as date_parser
 os.environ["FLAGS_use_mkldnn"] = "0"
 os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 
-from paddleocr import PaddleOCR
+# ── Lazy PaddleOCR singleton ─────────────────────────────────────────────────
+# PaddleOCR v3+ crashes if imported multiple times in the same process
+# ("PDX has already been initialized. Reinitialization is not supported.")
+# Fix: import ONLY when needed, keep a singleton instance.
+_paddle_ocr_instance = None
+
+def _get_paddle_ocr():
+    """Lazy-load PaddleOCR — avoids PDX reinitialization crash on Frappe workers."""
+    global _paddle_ocr_instance
+    if _paddle_ocr_instance is None:
+        try:
+            from paddleocr import PaddleOCR
+            _paddle_ocr_instance = PaddleOCR(use_angle_cls=True, lang="en", enable_mkldnn=False)
+        except Exception as e:
+            frappe.log_error(str(e)[:300], "PaddleOCR Init Error")
+            raise
+    return _paddle_ocr_instance
 
 
 @frappe.whitelist()
@@ -48,7 +64,7 @@ def smart_scan(file_url):
 
         # Scanned / image PDF → PaddleOCR fallback
         if not extracted_text.strip():
-            ocr = PaddleOCR(use_angle_cls=True, lang="en", enable_mkldnn=False)
+            ocr = _get_paddle_ocr()
             result = ocr.ocr(file_path)
             for r in result:
                 texts     = r.get("rec_texts", [])
@@ -119,7 +135,7 @@ def smart_scan(file_url):
         }
 
     except Exception as e:
-        frappe.log_error(traceback.format_exc()[:130], "OCR error")
+        frappe.log_error(traceback.format_exc()[:300], "OCR error")
         return {"success": False, "error": str(e)[:200]}
 
 
@@ -146,8 +162,6 @@ def parse_invoice(text):
     lines = text.split("\n")
 
     # ── Supplier ─────────────────────────────────────────────────────────
-    # PDF is two-column: "Tech Solutions Pvt Ltd   Invoice No: PINV-..."
-    # Only look in first 8 lines, strip right column by splitting on keyword
     for line in lines[:8]:
         l = line.strip()
         if not l: continue
@@ -203,7 +217,6 @@ def parse_invoice(text):
         if m: data["gstin"] = m.group(); break
 
     # ── Items ─────────────────────────────────────────────────────────────
-    # Header row: "# Item Code  Item Name  Qty  UOM  Rate  Amount  Tax  Total"
     in_items = False
     for line in lines:
         l = line.strip()
@@ -217,7 +230,6 @@ def parse_invoice(text):
             continue
 
         if in_items and l:
-            # Row format: "1  ITEM-CODE  Item Name Here  5  Nos  n65,000.00  n3,25,000.00  n58,500.00  n3,83,500.00"
             m = re.match(
                 r'^(\d+)\s+(\S+)\s+(.+?)\s+(\d+)\s+(Nos|Kg|Box|Pcs|Units?|Ltr)\s+'
                 r'(n[\d,]+\.\d+)\s+(n[\d,]+\.\d+)\s+(n[\d,]+\.\d+)\s+(n[\d,]+\.\d+)',
@@ -234,7 +246,6 @@ def parse_invoice(text):
                 })
 
     # ── Taxes ─────────────────────────────────────────────────────────────
-    # Header row: "Tax Type  Taxable Amount  Tax Rate  Tax Amount"
     in_tax = False
     for line in lines:
         l = line.strip()
@@ -259,7 +270,7 @@ def parse_invoice(text):
 
     # ── Grand Total ───────────────────────────────────────────────────────
     for line in lines:
-        l = re.sub(r'<[^>]+>', '', line)   # strip HTML bold tags
+        l = re.sub(r'<[^>]+>', '', line)
         if re.search(r'grand\s+total', l, re.IGNORECASE):
             nums = re.findall(r'n([\d,]+\.\d+)', line)
             if nums:
