@@ -49,7 +49,9 @@ app_license = "mit"
 
 doctype_js = {
     "Document Upload": "public/js/document_upload.js",
-    "Purchase Invoice": "public/js/purchase_invoice.js"
+    "Purchase Invoice": "public/js/purchase_invoice.js",
+    "Supplier": "public/js/supplier.js"
+    
 }
 #doctype_js = {"doctype" : "public/js/document_upload.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
